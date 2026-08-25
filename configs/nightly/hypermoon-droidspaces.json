@@ -11,7 +11,6 @@
     },
     "output_image": "Image.gz",
     "additional_script_link": "https://raw.githubusercontent.com/criollojoel10/KernelAction/main/scripts/hypermoon-droidspaces.sh",
-    "additional_post_script_link": "disabled",
     "kp": {
       "use": false,
       "kpimg_link": ""
@@ -29,7 +28,9 @@
         "repo": "https://github.com/DPR-MoonWake/linux-x86-clang-legacy",
         "branch": "r383902",
         "name": "clang-AOSP",
-        "binPath": ["/bin"]
+        "binPath": [
+          "/bin"
+        ]
       }
     ],
     "ccache": false,
@@ -61,7 +62,8 @@
     "AnyKernel3": {
       "repo": "https://github.com/DPR-MoonWake/AnyKernel3",
       "branch": "hyper_dev"
-    }
+    },
+    "additional_script_post_link": "disabled"
   },
   {
     "kernelSource": {
@@ -75,7 +77,6 @@
     },
     "output_image": "Image.gz",
     "additional_script_link": "https://raw.githubusercontent.com/criollojoel10/KernelAction/main/scripts/hypermoon-droidspaces.sh",
-    "additional_post_script_link": "disabled",
     "kp": {
       "use": false,
       "kpimg_link": ""
@@ -93,7 +94,9 @@
         "repo": "https://github.com/DPR-MoonWake/linux-x86-clang-legacy",
         "branch": "r383902",
         "name": "clang-AOSP",
-        "binPath": ["/bin"]
+        "binPath": [
+          "/bin"
+        ]
       }
     ],
     "ccache": false,
@@ -125,6 +128,7 @@
     "AnyKernel3": {
       "repo": "https://github.com/DPR-MoonWake/AnyKernel3",
       "branch": "hyper_dev"
-    }
+    },
+    "additional_script_post_link": "disabled"
   }
 ]
