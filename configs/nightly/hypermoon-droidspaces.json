@@ -18,7 +18,7 @@
     "kernelsu": {
       "enable": false,
       "setupLink": "",
-      "setupArg": "",
+      "setupArg": "6bad7880c1cd32b6db2b1ecfc88b190dae29f833",
       "setupName": "",
       "needPatch": false,
       "susfsLink": ""
@@ -84,7 +84,7 @@
     "kernelsu": {
       "enable": true,
       "setupLink": "https://raw.githubusercontent.com/DPR-MoonWake/RKSU/refs/heads/susfs-rksu-master/kernel/setup.sh",
-      "setupArg": "susfs-rksu-master",
+      "setupArg": "6bad7880c1cd32b6db2b1ecfc88b190dae29f833",
       "setupName": "KernelSU",
       "needPatch": false,
       "susfsLink": ""
