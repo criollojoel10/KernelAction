@@ -67,6 +67,55 @@ if [ -n "${kernelSUsetupLink:-}" ] && [ "${kernelSUsetupLink}" != "disabled" ]; 
   curl -LSs "${kernelSUsetupLink}" | bash -s "${kernelSUsetupArg:-}"
 fi
 
+# ------------------------------------------------------------- updates A+B
+# Backports selectos SIN tocar KSU/SuSFS:
+#  A) hypermoon main: fixes FROMGIT seguros (panel/proc/ln8000)
+#  B) RubyxLabs lineage-23.2 reciente: seguridad BPF, proc map_files,
+#     charger/thermal/gpu/ion/soc logging, mm compaction.
+# Excluidos: reverts de politica de LineageOS (16-jul), commits de
+# susfs/KSU-hook de main, y config zram writeback (usamos defconfig propio).
+# Un parche que no aplique se OMITE con aviso (no rompe la build).
+DS_UPDATES="
+DXRN-MoonWake/hypermoon_kernel_xiaomi_ruby|0590b031|HM panel: disable 30hz
+DXRN-MoonWake/hypermoon_kernel_xiaomi_ruby|435c514e|HM fs/proc: fix crashing issue
+RubyxLabs/kernel_xiaomi_mt6877|e296574a|RL gpu: synchronous event wakeups
+RubyxLabs/kernel_xiaomi_mt6877|0045b1d1|RL ion: demote DMA cache sync logs
+RubyxLabs/kernel_xiaomi_mt6877|853fe3fd|RL soc: demote DFD timeout logs
+RubyxLabs/kernel_xiaomi_mt6877|c3aa4c17|RL mm: refine compaction retry handling
+RubyxLabs/kernel_xiaomi_mt6877|a5de0118|RL gpu: reuse cached state DVFS logging
+RubyxLabs/kernel_xiaomi_mt6877|d43609da|RL thermal: defer USB psy notifications
+RubyxLabs/kernel_xiaomi_mt6877|8449b98b|RL charger: demote monitor status logs
+RubyxLabs/kernel_xiaomi_mt6877|aa6aca24|RL charger: drop periodic register dumps
+DXRN-MoonWake/hypermoon_kernel_xiaomi_ruby|742b01bf|HM ln8000: respect regmap_read api
+RubyxLabs/kernel_xiaomi_mt6877|a16a4b2f|RL skbuff: skb_network_header_was_set helper
+RubyxLabs/kernel_xiaomi_mt6877|ad765016|RL bpf: null prog array check
+RubyxLabs/kernel_xiaomi_mt6877|62a18ae5|RL bpf: validate effective prog array
+RubyxLabs/kernel_xiaomi_mt6877|cac04e5a|RL proc/map_files: kvmalloc_array
+"
+
+DS_OK=0; DS_SKIP=0
+echo "$DS_UPDATES" | while IFS= read -r line; do
+  [ -z "$line" ] && continue
+  repo="$(echo "$line" | cut -d'|' -f1)"
+  sha="$(echo "$line" | cut -d'|' -f2)"
+  title="$(echo "$line" | cut -d'|' -f3)"
+  case "$sha" in *unused*|"") continue;; esac
+  url="https://github.com/$repo/commit/$sha.patch"
+  if ! curl -fsSL "$url" -o /tmp/ds_upd.patch 2>/dev/null; then
+    echo "[updates] OMITIDO (descarga): $title ($sha)"
+    continue
+  fi
+  # dry-run primero: aplicacion atomica, sin hunks parciales
+  if patch -p1 --forward --fuzz=3 --dry-run < /tmp/ds_upd.patch >/dev/null 2>&1; then
+    patch -p1 --forward --fuzz=3 < /tmp/ds_upd.patch >/dev/null 2>&1
+    echo "[updates] OK      : $title ($sha)"
+  elif patch -p1 --forward --fuzz=3 -R --dry-run < /tmp/ds_upd.patch >/dev/null 2>&1; then
+    echo "[updates] YA ESTABA: $title ($sha)"
+  else
+    echo "[updates] OMITIDO (conflicto): $title ($sha)"
+  fi
+done
+
 # ---------------------------------------------------------------- parches
 apply_ds_patch() {
   fname="$1"
