@@ -7,7 +7,7 @@
       "defconfig": "ruby_droidspaces_defconfig",
       "extraConfig": "",
       "repo": "https://github.com/DPR-MoonWake/hypermoon_kernel_xiaomi_ruby",
-      "branch": "1.0.2"
+      "branch": "main"
     },
     "output_image": "Image.gz",
     "additional_script_link": "https://raw.githubusercontent.com/criollojoel10/KernelAction/main/scripts/hypermoon-droidspaces.sh",
@@ -73,7 +73,7 @@
       "defconfig": "ruby_droidspaces_defconfig",
       "extraConfig": "vendor/kernelsu.config vendor/susfs.config",
       "repo": "https://github.com/DPR-MoonWake/hypermoon_kernel_xiaomi_ruby",
-      "branch": "1.0.2"
+      "branch": "main"
     },
     "output_image": "Image.gz",
     "additional_script_link": "https://raw.githubusercontent.com/criollojoel10/KernelAction/main/scripts/hypermoon-droidspaces.sh",
