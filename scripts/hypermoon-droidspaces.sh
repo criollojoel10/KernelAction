@@ -31,7 +31,9 @@ echo "[droidspaces] directorio del kernel: $(pwd)"
 #      beba7f1c (verificado via API compare), usando el raw oficial.
 DS_TAG="1.0.2"
 DS_PIN="beba7f1c08d6631d53a92ed1f202c4318c4fae02"
-RAW_BASE="https://raw.githubusercontent.com/DXRN-MoonWake/hypermoon_kernel_xiaomi_ruby/$DS_PIN"
+# raw.githubusercontent solo resuelve este commit con SHA corto
+DS_PIN_SHORT="${DS_PIN:0:7}"
+RAW_BASE="https://raw.githubusercontent.com/DXRN-MoonWake/hypermoon_kernel_xiaomi_ruby/$DS_PIN_SHORT"
 
 if git rev-parse --is-inside-work-tree >/dev/null 2>&1; then
   CURRENT_SHA="$(git rev-parse HEAD 2>/dev/null || echo none)"
