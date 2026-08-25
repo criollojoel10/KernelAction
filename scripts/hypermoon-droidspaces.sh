@@ -22,23 +22,37 @@ echo "[droidspaces] directorio del kernel: $(pwd)"
 
 # ------------------------------------------------- fijar fuente al release
 # El kernel que corre en el dispositivo (artefacto upstream "beba7f1") se
-# construyo desde beba7f1c, NO desde el tag 1.0.2 (= b76f3eea, un commit
-# antes, sin la definicion de st_susfs_hide_sus_mnts_for_non_su_procs en
-# include/linux/susfs.h) ni desde main (regresiones de susfs 2.1.0 en
-# task_mmu.c y cgroup de abril 2026).
+# construyo desde beba7f1c, NO desde el tag 1.0.2 (= b76f3eea) ni desde
+# main (regresiones de susfs 2.1.0 en task_mmu.c/cgroup de abril 2026).
+#
+# GitHub rechaza fetch por SHA ancestro ("not our ref"), asi que:
+#   1. checkout del tag 1.0.2 (ref tip, si se puede fetchear), y
+#   2. sobrescribir los UNICOS 3 archivos que difieren entre el tag y
+#      beba7f1c (verificado via API compare), usando el raw oficial.
+DS_TAG="1.0.2"
 DS_PIN="beba7f1c08d6631d53a92ed1f202c4318c4fae02"
+RAW_BASE="https://raw.githubusercontent.com/DXRN-MoonWake/hypermoon_kernel_xiaomi_ruby/$DS_PIN"
+
 if git rev-parse --is-inside-work-tree >/dev/null 2>&1; then
   CURRENT_SHA="$(git rev-parse HEAD 2>/dev/null || echo none)"
-  if [ "$CURRENT_SHA" != "$DS_PIN" ]; then
-    echo "[droidspaces] fijando fuente al commit del release: ${DS_PIN:0:9} (antes: ${CURRENT_SHA:0:9})"
+  if [ "$CURRENT_SHA" != "$DS_TAG" ]; then
+    echo "[droidspaces] fijando fuente: tag $DS_TAG + delta del release ${DS_PIN:0:9} (antes: ${CURRENT_SHA:0:9})"
     git remote get-url origin >/dev/null 2>&1 || \
       git remote add origin https://github.com/DXRN-MoonWake/hypermoon_kernel_xiaomi_ruby
-    git fetch --depth=1 origin "$DS_PIN"
+    git fetch --depth=1 origin "refs/tags/$DS_TAG:refs/tags/$DS_TAG"
     # checkout forzado: descarta cualquier estado previo del arbol
-    git checkout --force FETCH_HEAD
-    echo "[droidspaces] fuente fijada: $(git rev-parse --short=7 HEAD)"
+    git checkout --force "refs/tags/$DS_TAG"
+    for f in \
+      include/linux/susfs.h \
+      include/linux/susfs_def.h \
+      arch/arm64/configs/vendor/susfs.config
+    do
+      echo "[droidspaces] sincronizando con release: $f"
+      curl -fsSL "$RAW_BASE/$f" -o "$f"
+    done
+    echo "[droidspaces] fuente fijada (base $(git rev-parse --short=7 HEAD) + delta ${DS_PIN:0:7})"
   else
-    echo "[droidspaces] fuente ya esta en ${DS_PIN:0:9}"
+    echo "[droidspaces] fuente ya esta en $DS_TAG"
   fi
 fi
 
@@ -159,9 +173,10 @@ echo "[droidspaces] defconfig generado: $DST_DEFCONFIG"
 
 # ------------------------------------------------------- version string
 # Igual que hypermoon-exp-version.sh pero marcando la build como DroidSpaces
+# y usando el hash del release real (beba7f1), no el del tag base.
 rm -f localversion-hypermoon
 echo "-HyperMoon-DroidSpaces-CI" > localversion-00-experimental
-echo "-$(git rev-parse --short=7 HEAD)" > localversion-01-experimental
+echo "-${DS_PIN:0:7}" > localversion-01-experimental
 echo "-${RUN_NUMBER:-0}" > localversion-02-experimental
 
 echo "[droidspaces] listo"
