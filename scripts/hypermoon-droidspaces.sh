@@ -2,13 +2,13 @@
 set -euo pipefail
 
 # hypermoon-droidspaces.sh - agrega soporte Droidspaces al kernel HyperMoon
-# (linux 4.19 no-GKI, xiaomi ruby / mt6877) sin tocar nada mas del kernel:
+# (linux 4.19 no-GKI, xiaomi ruby / mt6877) sin tocar KSU/SuSFS:
 #
-#   1. Aplica los parches non-GKI oficiales de Droidspaces-OSS que apliquen
-#      al arbol (los que apunten a archivos inexistentes se omiten).
-#   2. Genera arch/arm64/configs/ruby_droidspaces_defconfig a partir de
-#      ruby_defconfig (que queda intacto) agregando el bloque obligatorio
-#      de la documentacion oficial, adaptado a 4.19.
+#   1. Fija la fuente al release EXACTO que usa el dispositivo.
+#   2. Integra RKSU v3.0.0-30-legacy (mismo lineamiento que el manager).
+#   3. Backports A+B (fixes hypermoon main seguros + RubyxLabs reciente).
+#   4. Aplica parches non-GKI oficiales de Droidspaces-OSS.
+#   5. Genera ruby_droidspaces_defconfig (ruby_defconfig queda intacto).
 #
 # Se ejecuta desde el workflow con cwd = raiz del arbol del kernel,
 # ANTES del paso "Make defconfig".
@@ -21,9 +21,9 @@ BASE="https://raw.githubusercontent.com/ravindu644/Droidspaces-OSS/main/Document
 echo "[droidspaces] directorio del kernel: $(pwd)"
 
 # ------------------------------------------------- fijar fuente al release
-# El kernel que corre en el dispositivo (artefacto upstream "beba7f1") se
-# construyo desde beba7f1c, NO desde el tag 1.0.2 (= b76f3eea) ni desde
-# main (regresiones de susfs 2.1.0 en task_mmu.c/cgroup de abril 2026).
+# El kernel del dispositivo (artefacto upstream "beba7f1") se construyo
+# desde beba7f1c, NO desde el tag 1.0.2 (= b76f3eea) ni desde main
+# (regresiones de susfs 2.1.0 en task_mmu.c/cgroup de abril 2026).
 #
 # GitHub rechaza fetch por SHA ancestro ("not our ref"), asi que:
 #   1. checkout del tag 1.0.2 (ref tip, si se puede fetchear), y
@@ -38,7 +38,7 @@ RAW_BASE="https://raw.githubusercontent.com/DXRN-MoonWake/hypermoon_kernel_xiaom
 if git rev-parse --is-inside-work-tree >/dev/null 2>&1; then
   CURRENT_SHA="$(git rev-parse HEAD 2>/dev/null || echo none)"
   if [ "$CURRENT_SHA" != "$DS_TAG" ]; then
-    echo "[droidspaces] fijando fuente: tag $DS_TAG + delta del release ${DS_PIN:0:9} (antes: ${CURRENT_SHA:0:9})"
+    echo "[droidspaces] fijando fuente: tag $DS_TAG + delta del release ${DS_PIN_SHORT} (antes: ${CURRENT_SHA:0:9})"
     git remote get-url origin >/dev/null 2>&1 || \
       git remote add origin https://github.com/DXRN-MoonWake/hypermoon_kernel_xiaomi_ruby
     git fetch --depth=1 origin "refs/tags/$DS_TAG:refs/tags/$DS_TAG"
@@ -52,19 +52,31 @@ if git rev-parse --is-inside-work-tree >/dev/null 2>&1; then
       echo "[droidspaces] sincronizando con release: $f"
       curl -fsSL "$RAW_BASE/$f" -o "$f"
     done
-    echo "[droidspaces] fuente fijada (base $(git rev-parse --short=7 HEAD) + delta ${DS_PIN:0:7})"
+    echo "[droidspaces] fuente fijada (base $(git rev-parse --short=7 HEAD) + delta ${DS_PIN_SHORT})"
   else
     echo "[droidspaces] fuente ya esta en $DS_TAG"
   fi
 fi
 
-# Si esta variante integra KernelSU, re-ejecutar su setup: el checkout
-# anterior revierte las ediciones de drivers/Makefile y drivers/Kconfig
-# que hizo el paso "Integrate Kernel Root implementation" del workflow.
-# (setup.sh es idempotente: grep antes de editar y ln -sf.)
+# Si esta variante integra KernelSU: integracion AUTO-GESTIONADA.
+# El setup.sh del workflow clona la rama default de forma superficial y
+# su checkout de un sha/tag antiguo FALLA EN SILENCIO (queda en master),
+# y master reciente perdio compatibilidad con kernels 4.19 no-GKI
+# (refactors de hooks/kprobes/sucompat de marzo). Aqui clonamos
+# DIRECTAMENTE el tag legacy que corresponde al manager RKSU 3.0 legacy
+# instalado en el dispositivo.
+DS_RKSU_TAG="v3.0.0-30-legacy"
 if [ -n "${kernelSUsetupLink:-}" ] && [ "${kernelSUsetupLink}" != "disabled" ]; then
-  echo "[droidspaces] re-integrando KernelSU (${kernelSUsetupName:-KSU})"
-  curl -LSs "${kernelSUsetupLink}" | bash -s "${kernelSUsetupArg:-}"
+  echo "[droidspaces] integrando RKSU ${DS_RKSU_TAG} (autogestionado)"
+  rm -rf KernelSU
+  git clone --depth=1 --branch "$DS_RKSU_TAG" \
+    https://github.com/DPR-MoonWake/RKSU KernelSU
+  ln -sf ../KernelSU/kernel drivers/kernelsu
+  grep -q "kernelsu" drivers/Makefile || \
+    printf "\nobj-\$(CONFIG_KSU) += kernelsu/\n" >> drivers/Makefile
+  grep -q 'drivers/kernelsu/Kconfig' drivers/Kconfig || \
+    sed -i "/endmenu/i\source \"drivers/kernelsu/Kconfig\"" drivers/Kconfig
+  echo "[droidspaces] RKSU integrado: $(git -C KernelSU describe --tags 2>/dev/null || git -C KernelSU rev-parse --short HEAD)"
 fi
 
 # ------------------------------------------------------------- updates A+B
@@ -93,7 +105,6 @@ RubyxLabs/kernel_xiaomi_mt6877|62a18ae5|RL bpf: validate effective prog array
 RubyxLabs/kernel_xiaomi_mt6877|cac04e5a|RL proc/map_files: kvmalloc_array
 "
 
-DS_OK=0; DS_SKIP=0
 echo "$DS_UPDATES" | while IFS= read -r line; do
   [ -z "$line" ] && continue
   repo="$(echo "$line" | cut -d'|' -f1)"
@@ -227,7 +238,7 @@ echo "[droidspaces] defconfig generado: $DST_DEFCONFIG"
 # y usando el hash del release real (beba7f1), no el del tag base.
 rm -f localversion-hypermoon
 echo "-HyperMoon-DroidSpaces-CI" > localversion-00-experimental
-echo "-${DS_PIN:0:7}" > localversion-01-experimental
+echo "-${DS_PIN_SHORT}" > localversion-01-experimental
 echo "-${RUN_NUMBER:-0}" > localversion-02-experimental
 
 echo "[droidspaces] listo"
