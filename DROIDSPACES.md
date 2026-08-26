@@ -18,7 +18,7 @@ sin clonar ningún repositorio localmente.
 | Versión Linux real | **4.19.325 (no-GKI legacy)** — sublevel final de la LTS 4.19 (EOL kernel.org dic-2024) |
 | Versión reportada | `5.10.246` — spoof cosmético del propio árbol (commit `dc674dd0`) |
 | Defconfig | `ruby_defconfig` → se genera `ruby_droidspaces_defconfig` (el original queda intacto) |
-| Root | RKSU (fork KernelSU+SuSFS) fijado a `6bad7880c1cd32b6db2b1ecfc88b190dae29f833` (tip validado de `susfs-rksu-master`) |
+| Root | RKSU **tag `v3.0.0-30-legacy`** (`5402479c`) — mismo lineamiento que el manager instalado en el dispositivo |
 
 ### Por qué `beba7f1c` y ni el tag ni main
 
@@ -167,7 +167,13 @@ La variante Vanilla es respaldo sin root.
 * **Nuevo parche**: añadir línea `repo|sha|titulo` a `DS_UPDATES` en el script.
 * **Nueva base hypermoon**: actualizar `DS_TAG`/delta tras verificar con
   `compare` qué cambió entre tag y artefacto.
-* **RKSU**: bump del pin en `kernelsu.setupArg` (ambos JSON).
+* **RKSU**: cambiar `DS_RKSU_TAG` en el script (integración autogestionada).
+  ⚠️ NO usar `setupArg` del workflow para fijar versiones: `setup.sh` clona
+  de forma superficial y el checkout de un SHA/tag antiguo **falla en silencio**
+  (queda en master). Los builds #6/#7 perdieron root por esto: master de marzo
+  rompió compatibilidad 4.19 no-GKI (refactors hooks/kprobes/sucompat).
+  Síntoma en dispositivo: boot OK pero `su` con ENOENT aunque el manager
+  diga Working; además SUS_PATH oculta `su` a UIDs no autorizados.
 * **Verificar Droidspaces tras flashear**: app → Settings → Requirements →
   Check Requirements, o `su -c droidspaces check`.
 
