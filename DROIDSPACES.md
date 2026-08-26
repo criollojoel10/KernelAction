@@ -18,7 +18,7 @@ sin clonar ningún repositorio localmente.
 | Versión Linux real | **4.19.325 (no-GKI legacy)** — sublevel final de la LTS 4.19 (EOL kernel.org dic-2024) |
 | Versión reportada | `5.10.246` — spoof cosmético del propio árbol (commit `dc674dd0`) |
 | Defconfig | `ruby_defconfig` → se genera `ruby_droidspaces_defconfig` (el original queda intacto) |
-| Root | RKSU **tag `v3.0.0-30-legacy`** (`5402479c`) — mismo lineamiento que el manager instalado en el dispositivo |
+| Root | **KernelSU-Next `v3.1.0-legacy-susfs`** (`ba4422f0`, rifsxd) — alineado al manager `com.rifsxd.ksunext` 3.x del dispositivo. Configs KSU fijados de forma determinista en el defconfig generado (MANUAL_HOOK=y + SuSFS completo); los fragments extraConfig quedan como respaldo redundante |
 
 ### Por qué `beba7f1c` y ni el tag ni main
 
