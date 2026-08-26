@@ -58,25 +58,25 @@ if git rev-parse --is-inside-work-tree >/dev/null 2>&1; then
   fi
 fi
 
-# Si esta variante integra KernelSU: integracion AUTO-GESTIONADA.
-# El setup.sh del workflow clona la rama default de forma superficial y
-# su checkout de un sha/tag antiguo FALLA EN SILENCIO (queda en master),
-# y master reciente perdio compatibilidad con kernels 4.19 no-GKI
-# (refactors de hooks/kprobes/sucompat de marzo). Aqui clonamos
-# DIRECTAMENTE el tag legacy que corresponde al manager RKSU 3.0 legacy
-# instalado en el dispositivo.
-DS_RKSU_TAG="v3.0.0-30-legacy"
+# Si esta variante integra KernelSU: integracion AUTO-GESTIONADA con
+# KernelSU-Next (rifsxd), alineada al manager com.rifsxd.ksunext 3.x que
+# usa el dispositivo. El tag -legacy-susfs es la variante para kernels
+# antiguos (4.19 no-GKI) con integracion SuSFS.
+# NOTA: el setup.sh de cualquier fork clona de forma superficial y su
+# checkout de refs antiguo FALLA EN SILENCIO; por eso clonamos el tag
+# directamente aca.
+DS_KSUN_TAG="v3.1.0-legacy-susfs"
 if [ -n "${kernelSUsetupLink:-}" ] && [ "${kernelSUsetupLink}" != "disabled" ]; then
-  echo "[droidspaces] integrando RKSU ${DS_RKSU_TAG} (autogestionado)"
+  echo "[droidspaces] integrando KernelSU-Next ${DS_KSUN_TAG} (autogestionado)"
   rm -rf KernelSU
-  git clone --depth=1 --branch "$DS_RKSU_TAG" \
-    https://github.com/DPR-MoonWake/RKSU KernelSU
+  git clone --depth=1 --branch "$DS_KSUN_TAG" \
+    https://github.com/rifsxd/KernelSU-Next KernelSU
   ln -sf ../KernelSU/kernel drivers/kernelsu
   grep -q "kernelsu" drivers/Makefile || \
     printf "\nobj-\$(CONFIG_KSU) += kernelsu/\n" >> drivers/Makefile
   grep -q 'drivers/kernelsu/Kconfig' drivers/Kconfig || \
     sed -i "/endmenu/i\source \"drivers/kernelsu/Kconfig\"" drivers/Kconfig
-  echo "[droidspaces] RKSU integrado: $(git -C KernelSU describe --tags 2>/dev/null || git -C KernelSU rev-parse --short HEAD)"
+  echo "[droidspaces] KernelSU-Next integrado: $(git -C KernelSU describe --tags 2>/dev/null || git -C KernelSU rev-parse --short HEAD)"
 fi
 
 # ------------------------------------------------------------- updates A+B
@@ -230,6 +230,35 @@ CONFIG_IP_NF_NAT=y
 # requerido para que internet funcione en containers en kernels viejos
 # CONFIG_ANDROID_PARANOID_NETWORK is not set
 EOF
+
+# Configs KSU determinísticos (solo variante KSU): fijados en el defconfig
+# generado y NO via fragments extraConfig (mecanismo fragil con O=).
+# Verificados contra kernel/Kconfig de KernelSU-Next v3.1.0-legacy-susfs.
+if [ -n "${kernelSUsetupLink:-}" ] && [ "${kernelSUsetupLink}" != "disabled" ]; then
+  cat >> "$DST_DEFCONFIG" <<'EOF'
+
+# ------------------------------------------------------------------
+# KernelSU-Next (manual hook + SuSFS, alineado al manager instalado)
+# ------------------------------------------------------------------
+CONFIG_KSU=y
+CONFIG_KSU_MANUAL_HOOK=y
+CONFIG_KSU_KPROBES_HOOK=n
+CONFIG_KSU_DEBUG=n
+CONFIG_KSU_ALLOWLIST_WORKAROUND=n
+CONFIG_KSU_SUSFS=y
+CONFIG_KSU_SUSFS_SUS_PATH=y
+CONFIG_KSU_SUSFS_SUS_MOUNT=y
+CONFIG_KSU_SUSFS_SUS_KSTAT=y
+CONFIG_KSU_SUSFS_TRY_UMOUNT=y
+CONFIG_KSU_SUSFS_SPOOF_UNAME=y
+CONFIG_KSU_SUSFS_ENABLE_LOG=y
+CONFIG_KSU_SUSFS_HIDE_KSU_SUSFS_SYMBOLS=y
+CONFIG_KSU_SUSFS_SPOOF_CMDLINE_OR_BOOTCONFIG=y
+CONFIG_KSU_SUSFS_OPEN_REDIRECT=y
+CONFIG_KSU_SUSFS_SUS_MAP=y
+EOF
+  echo "[droidspaces] configs KSU-Next agregados a $DST_DEFCONFIG"
+fi
 
 echo "[droidspaces] defconfig generado: $DST_DEFCONFIG"
 
