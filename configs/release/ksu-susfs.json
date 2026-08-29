@@ -18,7 +18,7 @@
     },
     "kernelsu": {
       "enable": true,
-      "setupLink": "https://raw.githubusercontent.com/XDL-MoonWake/KernelSU-Next/v3.2.0-legacy-susfs-v2/kernel/setup.sh",
+      "setupLink": "https://raw.githubusercontent.com/XDL-MoonWake/KernelSU-Next/refs/heads/legacy-susfs-v2/kernel/setup.sh",
       "setupArg": "v3.2.0-legacy-susfs-v2",
       "setupName": "KernelSU-Next",
       "needPatch": false,
