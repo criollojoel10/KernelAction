@@ -143,6 +143,7 @@ jobs:
       kernelSUsetupName: ${{ matrix.repos.kernelsu.setupName }}
       kernelSUsusfsLink: ${{ matrix.repos.kernelsu.susfsLink }}
       kernelSUneedPatch: ${{ matrix.repos.kernelsu.needPatch }}
+      kernelSUpinnedSha: ${{ matrix.repos.kernelsu.pinnedSha || '' }}
       build_out: ${{ matrix.repos.params.build_out }}
 
       useKernelPatch: ${{ matrix.repos.kp.use }}
@@ -151,7 +152,7 @@ jobs:
 
       ccache: ${{ matrix.repos.ccache }}
       additional_script_link: ${{ matrix.repos.additional_script_link }}
-      additional_post_script_link: ${{ matrix.repos.additional_script_post_link }}
+      additional_post_script_link: ${{ matrix.repos.additional_post_script_link }}
     steps:
       - name: "Install prerequisites"
         run: |
@@ -318,6 +319,19 @@ jobs:
           echo -e "KERNELSU_TYPE_ROOT_IMPL_VERSION=$KERNELSU_TYPE_ROOT_IMPL_VERSION" >> $GITHUB_OUTPUT
           cd scripts
           sed -i 's/ -dirty//g' setlocalversion
+      - name: "Verify KernelSU driver pin (fail-loud)"
+        if: ${{ env.kernelSU == 'true' && env.kernelSUpinnedSha != '' }}
+        working-directory: ${{ env.KERNEL_NAME }}
+        run: |
+          actual=$(git -C ${{ env.kernelSUsetupName }} rev-parse HEAD)
+          expected="${{ env.kernelSUpinnedSha }}"
+          echo "Driver actual SHA : ${actual}"
+          echo "Driver esperado SHA: ${expected}"
+          if [ "${actual}" != "${expected}" ]; then
+            echo "::error::KernelSU-Next no coincide con el pin: esperado ${expected}, obtenido ${actual}. Abortando (sin fallback silencioso)."
+            exit 1
+          fi
+          echo "::notice::KernelSU-Next pineado correctamente a ${expected}"
       - name: "Run Additional Script"
         working-directory: ${{ env.KERNEL_NAME }}
         if: ${{ env.additional_script_link != 'disabled' }}

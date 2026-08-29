@@ -1,11 +1,20 @@
 # MoonWake CI build script (fork criollojoel10)
 
-> **🆕 Proyecto DroidSpaces para HyperMoon (xiaomi ruby / mt6877)**
-> Kernel base HyperMoon 1.0.2 (`beba7f1c`) + KSU/SuSFS intactos + soporte Droidspaces
-> + backports RubyxLabs. Configs: `configs/{nightly,release}/hypermoon-droidspaces.json`.
->
-> 📄 **Documentación completa: [DROIDSPACES.md](./DROIDSPACES.md)**
-> — base exacta, parches aplicados/omitidos, pipeline, troubleshooting y mantenimiento.
+Fork de [DPR-MoonWake/KernelAction](https://github.com/DPR-MoonWake/KernelAction)
+adaptado para construir los kernels de `criollojoel10/kernel_xiaomi_mt6877`
+(Redmi Note 12 Pro/Pro+ 5G / Discovery Edition, MT6877, kernel 4.19 no-GKI)
+con KernelSU-Next + SuSFS.
+
+Configs disponibles:
+
+- `configs/{nightly,release}/ksu-susfs.json` — kernel `ksu_susfs` con
+  KernelSU-Next `legacy-susfs-v2` (release pineado a `v3.2.0-legacy-susfs-v2`,
+  nightly a la rama viva) + fragments `vendor/kernelsu.config` y
+  `vendor/susfs.config` (incluye `SUS_MOUNT=y`).
+- Configs heredados de upstream (`aeron`, `hyper`/`hypermoon`, `moonwake`)
+  para los kernels base de DPR-MoonWake.
+
+DroidSpaces fue eliminado de este tenedor (sin soporte).
 
 ---
 
