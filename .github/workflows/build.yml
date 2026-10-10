@@ -450,6 +450,26 @@ jobs:
           CONFIG_USER_NS=y
           EOF
           echo "[droidspaces] configs appended to $DEFCONFIG"
+      - name: "Restore KSU/SuSFS vendor fragments (if missing)"
+        working-directory: ${{ env.KERNEL_NAME }}
+        if: ${{ github.event.inputs.droidspaces == 'true' }}
+        run: |
+          # The cip v4.19.325 sync (609b127e8c) dropped
+          # arch/arm64/configs/vendor/ from DPR-MoonWake/aeron_kernel_xiaomi_ruby,
+          # but extraConfig still references those fragments (same as the
+          # reference build). Restore them with the content of the run's commit
+          # (746bb6a9) ONLY when missing, so trees that still ship them are
+          # left untouched.
+          mkdir -p arch/arm64/configs/vendor
+          RAW="https://raw.githubusercontent.com/DPR-MoonWake/aeron_kernel_xiaomi_ruby/746bb6a901643d9a8cd1c6cb4fe14e2e0809e6b2/arch/arm64/configs/vendor"
+          for f in kernelsu.config susfs.config; do
+            if [ -f "arch/arm64/configs/vendor/$f" ]; then
+              echo "[vendor-fragments] ya existe, se deja intacto: $f"
+            else
+              curl -fsSL "$RAW/$f" -o "arch/arm64/configs/vendor/$f"
+              echo "[vendor-fragments] restaurado: $f"
+            fi
+          done
       - name: "Make defconfig"
         working-directory: ${{ env.KERNEL_NAME }}
         env:
