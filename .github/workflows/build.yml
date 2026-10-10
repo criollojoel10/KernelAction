@@ -452,7 +452,7 @@ jobs:
           echo "[droidspaces] configs appended to $DEFCONFIG"
       - name: "Restore KSU/SuSFS vendor fragments (if missing)"
         working-directory: ${{ env.KERNEL_NAME }}
-        if: ${{ github.event.inputs.droidspaces == 'true' }}
+        if: ${{ env.kernelSU == 'true' && github.event.inputs.droidspaces == 'true' }}
         run: |
           # The cip v4.19.325 sync (609b127e8c) dropped
           # arch/arm64/configs/vendor/ from DPR-MoonWake/aeron_kernel_xiaomi_ruby,
@@ -472,7 +472,7 @@ jobs:
           done
       - name: "Restore KernelSU hooks + SuSFS integration (if missing)"
         working-directory: ${{ env.KERNEL_NAME }}
-        if: ${{ github.event.inputs.droidspaces == 'true' }}
+        if: ${{ env.kernelSU == 'true' && github.event.inputs.droidspaces == 'true' }}
         run: |
           # The cip v4.19.325 sync (609b127e8c) dropped the KernelSU manual
           # hooks and the whole SuSFS integration from
