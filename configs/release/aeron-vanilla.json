@@ -6,8 +6,8 @@
       "name": "Aeron-Phoenix-Vanilla",
       "defconfig": "ruby_defconfig",
       "extraConfig": "",
-      "repo": "https://github.com/DPR-MoonWake/aeron_kernel_xiaomi_ruby",
-      "branch": "ksu_susfs"
+      "repo": "https://github.com/RubyxLabs/kernel_xiaomi_mt6877",
+      "branch": "lineage-23.2"
     },
     "output_image": "Image.gz-dtb",
     "additional_script_link": "disabled",
