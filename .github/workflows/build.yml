@@ -484,7 +484,8 @@ jobs:
           if grep -q "ksu_handle_sys_reboot" kernel/reboot.c; then
             echo "[ksu-hooks] hooks ya presentes, se deja intacto"
           else
-            patch -p1 --forward < "${{ github.workspace }}/scripts/aeron-ksu-susfs.patch"
+            curl -fsSL "https://raw.githubusercontent.com/criollojoel10/KernelAction/main/scripts/aeron-ksu-susfs.patch" -o /tmp/aeron-ksu-susfs.patch
+            patch -p1 --forward < /tmp/aeron-ksu-susfs.patch
             echo "[ksu-hooks] hooks + susfs restaurados"
           fi
       - name: "Make defconfig"
