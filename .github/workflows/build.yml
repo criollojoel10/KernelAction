@@ -470,6 +470,23 @@ jobs:
               echo "[vendor-fragments] restaurado: $f"
             fi
           done
+      - name: "Restore KernelSU hooks + SuSFS integration (if missing)"
+        working-directory: ${{ env.KERNEL_NAME }}
+        if: ${{ github.event.inputs.droidspaces == 'true' }}
+        run: |
+          # The cip v4.19.325 sync (609b127e8c) dropped the KernelSU manual
+          # hooks and the whole SuSFS integration from
+          # DPR-MoonWake/aeron_kernel_xiaomi_ruby (drivers/kernsu/Kbuild then
+          # fails with "No hooks were defined"). Restore them with
+          # scripts/aeron-ksu-susfs.patch (content of the reference run's
+          # commit 746bb6a9, adapted to the current tip) ONLY when the hooks
+          # are missing, so trees that still ship them are left untouched.
+          if grep -q "ksu_handle_sys_reboot" kernel/reboot.c; then
+            echo "[ksu-hooks] hooks ya presentes, se deja intacto"
+          else
+            patch -p1 --forward < "${{ github.workspace }}/scripts/aeron-ksu-susfs.patch"
+            echo "[ksu-hooks] hooks + susfs restaurados"
+          fi
       - name: "Make defconfig"
         working-directory: ${{ env.KERNEL_NAME }}
         env:
