@@ -43,6 +43,14 @@ on:
         options:
           - "true"
           - "false"
+      minimal_only:
+        description: "Build with ONLY the mandatory DroidSpaces configs (no Step 2 UFW/fail2ban, no macvlan/ipvlan, no non-GKI patches)"
+        required: true
+        type: choice
+        default: "false"
+        options:
+          - "false"
+          - "true"
 
 permissions:
   contents: write
@@ -453,6 +461,16 @@ jobs:
           CONFIG_MACVLAN=y
           CONFIG_IPVLAN=y
 
+          EOF
+          echo "[droidspaces] configs appended to $DEFCONFIG"
+
+          if [ "${{ github.event.inputs.minimal_only }}" != "true" ]; then
+            cat >> "$DEFCONFIG" <<'EOF'
+
+          # Macvlan/IPvlan modes (--net=macvlan / --net=ipvlan)
+          CONFIG_MACVLAN=y
+          CONFIG_IPVLAN=y
+
           # Optional (step 2): UFW & Fail2ban inside the container, use NAT mode
           CONFIG_NETFILTER_XT_MATCH_COMMENT=y
           CONFIG_NETFILTER_XT_MATCH_STATE=y
@@ -478,7 +496,10 @@ jobs:
           CONFIG_NETFILTER_NETLINK_LOG=y
           CONFIG_NETFILTER_XT_TARGET_NFLOG=y
           EOF
-          echo "[droidspaces] configs appended to $DEFCONFIG"
+            echo "[droidspaces] opcional: Step 2 UFW/fail2ban + macvlan/ipvlan agregados"
+          else
+            echo "[droidspaces] minimal_only: Step 2 + macvlan/ipvlan OMITIDOS"
+          fi
       - name: "Restore KSU/SuSFS vendor fragments (if missing)"
         working-directory: ${{ env.KERNEL_NAME }}
         if: ${{ env.kernelSU == 'true' && github.event.inputs.droidspaces == 'true' }}
@@ -517,9 +538,9 @@ jobs:
             patch -p1 --forward < /tmp/aeron-ksu-susfs.patch
             echo "[ksu-hooks] hooks + susfs restaurados"
           fi
-      - name: "Apply Droidspaces non-GKI patches"
+      - name: "Apply DroidSpaces non-GKI patches"
         working-directory: ${{ env.KERNEL_NAME }}
-        if: ${{ github.event.inputs.droidspaces == 'true' }}
+        if: ${{ github.event.inputs.droidspaces == 'true' && github.event.inputs.minimal_only != 'true' }}
         run: |
           # Step 3 of the official non-GKI guide: apply every patch in
           # Documentation/resources/kernel-patches/non-GKI.
