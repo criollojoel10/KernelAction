@@ -568,6 +568,24 @@ jobs:
             echo "[droidspaces-patches] aplicando 02 (cgroup file prefix)"
             patch -p1 --forward < /tmp/ds-patches/02.patch
           fi
+      - name: "Commit ephemeral changes (clean git state)"
+        working-directory: ${{ env.KERNEL_NAME }}
+        run: |
+          # The DroidSpaces configs and non-GKI patches modify the freshly
+          # cloned tree in place, which leaves it "dirty". The kernel's
+          # setlocalversion appends "-dirty" to the version string as a result.
+          # The tree is an ephemeral clone, so commit the changes to keep the
+          # build reporting a clean version (e.g. ...-gd15fffb90a19).
+          git config user.email "ci@droidspaces.local"
+          git config user.name "DroidSpaces CI"
+          git add -A
+          if ! git diff --cached --quiet; then
+            git commit -m "chore: droidspaces configs + non-GKI patches (ephemeral)"
+            echo "[git] cambios efimeros commiteados - build limpia"
+          else
+            echo "[git] el arbol ya esta limpio (sin cambios)"
+          fi
+          git status --porcelain | head -3
       - name: "Make defconfig"
         working-directory: ${{ env.KERNEL_NAME }}
         env:
