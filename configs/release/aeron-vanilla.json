@@ -10,7 +10,7 @@
       "branch": "lineage-23.2"
     },
     "output_image": "Image.gz-dtb",
-    "additional_script_link": "disabled",
+    "additional_script_link": "https://raw.githubusercontent.com/criollojoel10/KernelAction/fix/close-range/scripts/patch-close-range.sh",
     "additional_post_script_link": "disabled",
     "kp": {
       "use": false,
